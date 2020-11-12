@@ -92,9 +92,6 @@ class FictureCanvas extends HTMLElement {
     this.width = Number.parseInt(this.getAttribute('width')) || 500
     this.lineWidth = Number.parseInt(this.getAttribute('line-width')) || 3
     this.penColor = this.getAttribute('color') || '#000'
-    this.data = [...Array(this.height)].map((_) =>
-      [...Array(this.width)].map((_) => '#fff')
-    )
 
     this.setupCanvas()
 
@@ -145,10 +142,17 @@ class FictureCanvas extends HTMLElement {
     canvas.addEventListener('mouseup', () =>
       canvas.removeEventListener('mousemove', listener)
     )
+
+    canvas.addEventListener('mouseleave', () =>
+      canvas.removeEventListener('mousemove', listener)
+    )
   }
 
-  getPixelData() {
-    return this.data
+  getImageData() {
+    const canvas = this.shadowRoot.querySelector('canvas')
+    const context = canvas.getContext('2d')
+
+    return context.getImageData(0, 0, this.width, this.height)
   }
 }
 
