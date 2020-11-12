@@ -47,6 +47,12 @@ template.innerHTML = `
     <div>
 `
 
+/**
+ * Calculates the x and y coordinates of an interaction with
+ *  a canvas
+ * @param {HTMLCanvasElement} canvas - the canvas that is being interacted with
+ * @param {Event} event - the event fired by that canvas
+ */
 const getCursorPosition = (canvas, event) => {
   const rect = canvas.getBoundingClientRect()
   const x = event.clientX - rect.left
@@ -55,7 +61,27 @@ const getCursorPosition = (canvas, event) => {
   return { x, y }
 }
 
+/**
+ * Creates a listener for painting lines on a canvas
+ * @param {HTMLCanvasElement} canvas
+ */
+const paintListener = (canvas) => {
+  const context = canvas.getContext('2d')
+
+  return (e) => {
+    const { x, y } = getCursorPosition(canvas, e)
+
+    context.lineTo(x, y)
+    context.stroke()
+  }
+}
+
+/**
+ * Class representing a canvas with the capability to draw
+ *  and change colors.
+ */
 class FictureCanvas extends HTMLElement {
+  /** Create a new canvas and setup the shadow DOM */
   constructor() {
     super()
 
@@ -64,11 +90,11 @@ class FictureCanvas extends HTMLElement {
 
     this.height = Number.parseInt(this.getAttribute('height')) || 500
     this.width = Number.parseInt(this.getAttribute('width')) || 500
+    this.lineWidth = Number.parseInt(this.getAttribute('line-width')) || 3
     this.penColor = this.getAttribute('color') || '#000'
     this.data = [...Array(this.height)].map((_) =>
       [...Array(this.width)].map((_) => '#fff')
     )
-    this.drawing = false
 
     this.setupCanvas()
 
@@ -80,8 +106,14 @@ class FictureCanvas extends HTMLElement {
         .addEventListener('change', (e) => (this.penColor = e.target.value))
   }
 
+  /** Setup size and add event listeners to the canvas */
   setupCanvas() {
     const canvas = this.shadowRoot.querySelector('canvas')
+    const ctx = canvas.getContext('2d')
+    const listener = paintListener(canvas, ctx)
+
+    ctx.lineJoin = 'round'
+    ctx.lineCap = 'round'
 
     // setup pixel dimensions of canvas
     canvas.width = this.width
@@ -91,37 +123,28 @@ class FictureCanvas extends HTMLElement {
     canvas.style.width = this.width
     canvas.style.height = this.height
 
-    const ctx = canvas.getContext('2d')
-
     // paint entire canvas white
     ctx.fillStyle = '#fff'
     ctx.fillRect(0, 0, this.width, this.height)
 
-    // when a user begins drawing
     canvas.addEventListener('mousedown', (e) => {
       const { x, y } = getCursorPosition(canvas, e)
 
-      this.drawing = true
-      ctx.fillStyle = this.penColor
-      ctx.fillRect(x, y, 1, 1)
-      this.data[y][x] = this.penColor
+      // set style for the line
+      ctx.lineWidth = this.lineWidth
+      ctx.strokeStyle = this.penColor
+
+      // start drawing the line
+      ctx.beginPath()
+      ctx.moveTo(x, y)
+
+      // draw as you drag the mouse
+      canvas.addEventListener('mousemove', listener)
     })
 
-    canvas.addEventListener('mousemove', (e) => {
-      const { x, y } = getCursorPosition(canvas, e)
-
-      if (this.drawing) {
-        ctx.fillStyle = this.penColor
-        ctx.fillRect(x, y, 1, 1)
-        this.data[y][x]
-      }
-    })
-
-    // when a user finishes drawing
-    canvas.addEventListener('mouseup', (e) => {
-      this.drawing = false
-      console.log(this.data)
-    })
+    canvas.addEventListener('mouseup', () =>
+      canvas.removeEventListener('mousemove', listener)
+    )
   }
 
   getPixelData() {
