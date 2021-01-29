@@ -1,49 +1,48 @@
 const template = document.createElement('template')
 template.innerHTML = `
     <style>
-        #container {
+        .container {
             display: inline-flex;
             flex-direction: column;
             font-family: Roboto;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
         }
 
-        #canvas-container {
-            background-color: #eee;
-            padding: 50px;
+        #line-width {
+          line-height: 5em;
         }
-
-        canvas {
-            margin: 0 auto;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-        }
-
-        #controls {
-            background-color: grey;
+        .controls {
+            background-color: #ccc;
             padding: 1em;
+            display: flex;
+            align-items: center;
+        }
+        .controls > * {
+          margin: 0 0.25em;
         }
 
-        #controls:after {
-            content: "";
-            width: 100%;
-            z-index: -1;
-            transform: scale(.9);
-            box-shadow: 0px 0px 9px 2px #000;
-        }
-
-        input[type='color'] {
-            appearance: none;
-            background: white;
-            padding: 0;
-        }
+      .default-color {
+        height: 1em;
+        width: 1em;
+        border: 3px solid #eee;
+      }
     </style>
-    <div id='container'>
-        <div id='controls'>
-            <label id='pen-label' for='pen-color'>Pen:</label>
-            <input id='pen-color' type='color' value='#000' name='pen-color' />
+    <div class='container'>
+        <div class='controls'>
+            <input type="color" id='primary-color'/> 
+            <select id='line-width' value=1>
+              <option value=1>1</option>
+              <option value=2>2</option>
+              <option value=3>3</option>
+              <option value=4>4</option>
+            </select>
+            <div class='default-color' name='#ff0000'></div>
+            <div class='default-color' name='#00ff00'></div>
+            <div class='default-color' name='#0000ff'></div>
+            <div class='default-color' name='#eeff00'></div>
+            <div class='default-color' name='#000000'></div>
         </div>
-        <div id='canvas-container'>
-            <canvas />
-        </div>
+        <canvas />
     <div>
 `
 
@@ -76,6 +75,14 @@ const paintListener = (canvas) => {
   }
 }
 
+const defaultColorListener = (canvas, color) => {
+  return (e) => {
+    e.preventDefault()
+    canvas.getPrimaryColorElement().value = color
+    canvas.setPenColor(color)
+  }
+}
+
 /**
  * Class representing a canvas with the capability to draw
  *  and change colors.
@@ -85,22 +92,38 @@ class FictureCanvas extends HTMLElement {
   constructor() {
     super()
 
-    const shadow = this.attachShadow({ mode: 'open' })
-    shadow.appendChild(template.content.cloneNode(true))
+    // Create shadow dom and attach template
+    this.shadow = this.attachShadow({ mode: 'open' })
+    this.shadow.appendChild(template.content.cloneNode(true))
 
+    // Set attributes
     this.height = Number.parseInt(this.getAttribute('height')) || 500
     this.width = Number.parseInt(this.getAttribute('width')) || 500
     this.lineWidth = Number.parseInt(this.getAttribute('line-width')) || 3
-    this.penColor = this.getAttribute('color') || '#000'
+    this.setPenColor(this.getAttribute('color') || '#000')
 
     this.setupCanvas()
 
     if (this.getAttribute('controls') === null)
-      shadow.querySelector('#controls').style.display = 'none'
+      this.shadow.querySelector('.controls').style.display = 'none'
     else
-      shadow
-        .querySelector('#pen-color')
-        .addEventListener('change', (e) => (this.penColor = e.target.value))
+      this.shadow
+        .querySelector('#primary-color')
+        .addEventListener('change', (e) => this.setPenColor(e.target.value))
+
+    // Add backgrounds and listeners to default color selectors
+    this.shadow.querySelectorAll('.default-color').forEach((element) => {
+      const color = element.getAttribute('name')
+
+      element.style.backgroundColor = color
+      element.addEventListener('click', defaultColorListener(this, color))
+    })
+
+    // Add listener to line width selector
+    this.shadow.querySelector('#line-width').addEventListener('change', (e) => {
+      this.lineWidth = e.target.value * 3
+      console.log(this.lineWidth)
+    })
   }
 
   /** Setup size and add event listeners to the canvas */
@@ -128,7 +151,7 @@ class FictureCanvas extends HTMLElement {
       const { x, y } = getCursorPosition(canvas, e)
 
       // set style for the line
-      ctx.lineWidth = this.lineWidth
+      ctx.lineWidth = Number.parseInt(this.lineWidth)
       ctx.strokeStyle = this.penColor
 
       // start drawing the line
@@ -148,6 +171,14 @@ class FictureCanvas extends HTMLElement {
     )
   }
 
+  setPenColor(color) {
+    this.getPrimaryColorElement().value = color
+    this.penColor = color
+  }
+
+  getPrimaryColorElement() {
+    return this.shadow.querySelector('#primary-color')
+  }
   getImageData() {
     const canvas = this.shadowRoot.querySelector('canvas')
     const context = canvas.getContext('2d')
