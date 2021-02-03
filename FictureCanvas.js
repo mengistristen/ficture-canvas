@@ -26,21 +26,35 @@ template.innerHTML = `
         width: 1em;
         border: 3px solid #eee;
       }
+
+      #clear {
+        background: none;
+        border: none;
+        padding: 0.5em 1em;
+        border-radius: 10px;
+        transition: all 0.2s ease-in-out;
+      }
+
+      #clear:hover {
+        background-color: rgba(120, 120, 120, 0.5);
+        color: white;
+      }
     </style>
     <div class='container'>
         <div class='controls'>
             <input type="color" id='primary-color'/> 
+            <div class='default-color' name='#ff0000'></div>
+            <div class='default-color' name='#00ff00'></div>
+            <div class='default-color' name='#0000ff'></div>
+            <div class='default-color' name='#eeff00'></div>
+            <div class='default-color' name='#000000'></div>
             <select id='line-width' value=1>
               <option value=1>1</option>
               <option value=2>2</option>
               <option value=3>3</option>
               <option value=4>4</option>
             </select>
-            <div class='default-color' name='#ff0000'></div>
-            <div class='default-color' name='#00ff00'></div>
-            <div class='default-color' name='#0000ff'></div>
-            <div class='default-color' name='#eeff00'></div>
-            <div class='default-color' name='#000000'></div>
+            <button id='clear'>CLEAR</button>
         </div>
         <canvas />
     <div>
@@ -122,13 +136,20 @@ class FictureCanvas extends HTMLElement {
     // Add listener to line width selector
     this.shadow.querySelector('#line-width').addEventListener('change', (e) => {
       this.lineWidth = e.target.value * 3
-      console.log(this.lineWidth)
+    })
+
+    // Add listener to clear button
+    this.shadow.querySelector('#clear').addEventListener('click', (e) => {
+      const ctx = this.shadow.querySelector('canvas').getContext('2d')
+
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(0, 0, this.width, this.height)
     })
   }
 
   /** Setup size and add event listeners to the canvas */
   setupCanvas() {
-    const canvas = this.shadowRoot.querySelector('canvas')
+    const canvas = this.shadow.querySelector('canvas')
     const ctx = canvas.getContext('2d')
     const listener = paintListener(canvas, ctx)
 
@@ -179,6 +200,7 @@ class FictureCanvas extends HTMLElement {
   getPrimaryColorElement() {
     return this.shadow.querySelector('#primary-color')
   }
+
   getImageData() {
     const canvas = this.shadowRoot.querySelector('canvas')
     const context = canvas.getContext('2d')
