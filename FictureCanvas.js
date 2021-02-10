@@ -85,6 +85,7 @@ const paintListener = (canvas) => {
     const { x, y } = getCursorPosition(canvas, e)
 
     context.lineTo(x, y)
+    context.lineJoin = 'round'
     context.stroke()
   }
 }
