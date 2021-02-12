@@ -202,11 +202,10 @@ class FictureCanvas extends HTMLElement {
     return this.shadow.querySelector('#primary-color')
   }
 
-  getImageData() {
-    const canvas = this.shadowRoot.querySelector('canvas')
-    const context = canvas.getContext('2d')
+  getImageJpeg() {
+    const canvas = this.shadow.querySelector('canvas')
 
-    return context.getImageData(0, 0, this.width, this.height)
+    return canvas.toDataURL('image/jpeg')
   }
 }
 
