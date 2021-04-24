@@ -165,9 +165,11 @@ class FictureCanvas extends HTMLElement {
     canvas.style.width = this.width
     canvas.style.height = this.height
 
-    // paint entire canvas white
+    /* // paint entire canvas white
     ctx.fillStyle = '#fff'
-    ctx.fillRect(0, 0, this.width, this.height)
+    ctx.fillRect(0, 0, this.width, this.height) */
+
+    ctx.clearRect(0, 0, this.width, this.height)
 
     canvas.addEventListener('mousedown', (e) => {
       const { x, y } = getCursorPosition(canvas, e)
@@ -202,10 +204,15 @@ class FictureCanvas extends HTMLElement {
     return this.shadow.querySelector('#primary-color')
   }
 
-  getImageJpeg() {
-    const canvas = this.shadow.querySelector('canvas')
+  getCanvas() {
+    return this.shadow.querySelector('canvas')
+  }
 
-    return canvas.toDataURL('image/jpeg')
+  clear() {
+    const canvas = this.shadow.querySelector('canvas')
+    const ctx = canvas.getContext('2d')
+
+    ctx.clearRect(0, 0, this.width, this.height)
   }
 }
 
